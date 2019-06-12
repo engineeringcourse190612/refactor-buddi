@@ -105,30 +105,23 @@ public class BudgetCategoryImpl extends SourceImpl implements BudgetCategory {
     }
 
     private long getAmount(Period period) {
-        //If Start and End are in the same budget period
         BudgetPeriod beginBudgetPeriod = createBeginBudgetPeriod(period);
         BudgetPeriod endBudgetPeriod = createEndBudgetPeriod(period);
         if (beginBudgetPeriod.equals(endBudgetPeriod)) {
-            return (long) getAmountInPeriod(period.getStartDate(), period.getEndDate());
+            return (long) getAmountInPeriod(period);
         }
 
-        //If the area between Start and End overlap at least two budget periods.
-        if (beginBudgetPeriod.nextBudgetPeriod().getStartDate().equals(endBudgetPeriod.getStartDate())
-                || beginBudgetPeriod.nextBudgetPeriod().getStartDate().before(endBudgetPeriod.getStartDate())) {
-            double totalStartPeriod = getAmountInPeriod(period.getStartDate(), beginBudgetPeriod.getEndDate());
+        double totalStartPeriod = getAmountInPeriod(new Period(period.getStartDate(), beginBudgetPeriod.getEndDate()));
 
-            double totalInMiddle = 0;
-            for (String periodKey : getBudgetPeriods(
-                    beginBudgetPeriod.nextBudgetPeriod().getStartDate(),
-                    endBudgetPeriod.previousBudgetPeriod().getStartDate())) {
-                totalInMiddle += getAmountOfBudgetPeriod(getPeriodDate(periodKey));
-            }
-
-            double totalEndPeriod = getAmountInPeriod(endBudgetPeriod.getStartDate(), period.getEndDate());
-            return (long) (totalStartPeriod + totalInMiddle + totalEndPeriod);
+        double totalInMiddle = 0;
+        for (String periodKey : getBudgetPeriods(
+                beginBudgetPeriod.nextBudgetPeriod().getStartDate(),
+                endBudgetPeriod.previousBudgetPeriod().getStartDate())) {
+            totalInMiddle += getAmountOfBudgetPeriod(getPeriodDate(periodKey));
         }
 
-        throw new RuntimeException("You should not be here.  We have returned all legitimate numbers from getAmount(Date, Date) in BudgetCategoryImpl.  Please contact Wyatt Olson with details on how you got here (what steps did you perform in Buddi to get this error message).");
+        double totalEndPeriod = getAmountInPeriod(new Period(endBudgetPeriod.getStartDate(), period.getEndDate()));
+        return (long) (totalStartPeriod + totalInMiddle + totalEndPeriod);
     }
 
     private BudgetPeriod createEndBudgetPeriod(Period period) {
@@ -139,10 +132,10 @@ public class BudgetCategoryImpl extends SourceImpl implements BudgetCategory {
         return new BudgetPeriod(getBudgetPeriodType(), period.getStartDate());
     }
 
-    private double getAmountInPeriod(Date startDate, Date endDate) {
-        long amount = getAmountOfBudgetPeriod(startDate);
-        long daysInPeriod = getBudgetPeriodType().getDaysInPeriod(startDate);
-        long daysBetween = DateUtil.getDaysBetween(startDate, endDate, true);
+    private double getAmountInPeriod(Period period) {
+        long amount = getAmountOfBudgetPeriod(period.getStartDate());
+        long daysInPeriod = getBudgetPeriodType().getDaysInPeriod(period.getStartDate());
+        long daysBetween = period.getDayCount();
         return (double) amount / (double) daysInPeriod * daysBetween;
     }
 
