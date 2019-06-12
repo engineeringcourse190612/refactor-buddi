@@ -21,7 +21,13 @@ public class Period {
         return endDate;
     }
 
-    public int getDayCount() {
-        return DateUtil.getDaysBetween(getStartDate(), getEndDate(), true);
+    private int getDayCount() {
+        return DateUtil.getDaysBetween(startDate, endDate, true);
+    }
+
+    public int getOverlappingDayCount(Period another) {
+        Date overlappingEndDate = endDate.before(another.endDate) ? endDate : another.endDate;
+        Date overlappingStartDate = startDate.after(another.startDate) ? startDate : another.startDate;
+        return new Period(overlappingStartDate, overlappingEndDate).getDayCount();
     }
 }
