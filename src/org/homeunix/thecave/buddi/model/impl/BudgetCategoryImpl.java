@@ -114,10 +114,8 @@ public class BudgetCategoryImpl extends SourceImpl implements BudgetCategory {
         double totalStartPeriod = getAmountInPeriod(new Period(period.getStartDate(), beginBudgetPeriod.getEndDate()));
 
         double totalInMiddle = 0;
-        for (String periodKey : getBudgetPeriods(
-                beginBudgetPeriod.nextBudgetPeriod().getStartDate(),
-                endBudgetPeriod.previousBudgetPeriod().getStartDate())) {
-            totalInMiddle += getAmountOfBudgetPeriod(getPeriodDate(periodKey));
+        for (BudgetPeriod budgetPeriod : getBudgetPeriods(beginBudgetPeriod.nextBudgetPeriod(), endBudgetPeriod.previousBudgetPeriod())) {
+            totalInMiddle += getAmountOfBudgetPeriod(budgetPeriod.getStartDate());
         }
 
         double totalEndPeriod = getAmountInPeriod(new Period(endBudgetPeriod.getStartDate(), period.getEndDate()));
@@ -143,21 +141,21 @@ public class BudgetCategoryImpl extends SourceImpl implements BudgetCategory {
      * Returns a list of BudgetPeriods, covering the entire range of periods
      * occupied by startDate to endDate.
      *
-     * @param startDate
-     * @param endDate
+     * @param beginBudgetPeriod
+     * @param endBudgetPeriod
      * @return
      */
-    public List<String> getBudgetPeriods(Date startDate, Date endDate) {
-        List<String> budgetPeriodKeys = new LinkedList<String>();
+    public List<BudgetPeriod> getBudgetPeriods(BudgetPeriod beginBudgetPeriod, BudgetPeriod endBudgetPeriod) {
+        List<BudgetPeriod> budgetPeriods = new LinkedList<>();
 
-        Date temp = getBudgetPeriodType().getStartOfBudgetPeriod(startDate);
+        BudgetPeriod current = beginBudgetPeriod;
 
-        while (temp.before(getBudgetPeriodType().getEndOfBudgetPeriod(endDate))) {
-            budgetPeriodKeys.add(getPeriodKey(temp));
-            temp = getBudgetPeriodType().getBudgetPeriodOffset(temp, 1);
+        while (current.getStartDate().before(endBudgetPeriod.getEndDate())) {
+            budgetPeriods.add(current);
+            current = current.nextBudgetPeriod();
         }
 
-        return budgetPeriodKeys;
+        return budgetPeriods;
     }
 
     /**
